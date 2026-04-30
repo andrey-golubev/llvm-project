@@ -516,6 +516,24 @@ func.func private @mult_return_callee(%t: tensor<?xf32>,  %cond:i1, %a: index, %
 func.func @mult_return(%t: tensor<?xf32>,  %cond:i1, %a: index, %b: index) -> (tensor<10xf32>, index) {
   // CHECK: %[[RET:.*]] = call @mult_return_callee(%[[T]], %[[COND]], %[[A]], %[[B]]) : (memref<?xf32, strided<[?], offset: ?>>, i1, index, index) -> index
   // CHECK: return %[[T]], %[[RET]] : memref<?xf32, strided<[?], offset: ?>>, index
-  %t_res, %v = func.call @mult_return_callee(%t, %cond, %a, %b) : (tensor<?xf32>, i1, index, index) -> (tensor<10xf32>, index) 
+  %t_res, %v = func.call @mult_return_callee(%t, %cond, %a, %b) : (tensor<?xf32>, i1, index, index) -> (tensor<10xf32>, index)
   return %t_res, %v : tensor<10xf32>, index
+}
+
+// -----
+
+#map = affine_map<(d0, d1) -> (d1, d0)>
+// CHECK: #[[map:.*]] = affine_map<(d0, d1) -> (d1, d0)>
+
+// CHECK: func.func @extract_slice_with_non_1d_affine_map
+// CHECK-SAME: (%[[t:.*]]: memref<42x10xf32, #[[map]]>)
+// CHECK-SAME: -> memref<32x10xf32, #[[map]]>
+func.func @extract_slice_with_non_1d_affine_map(
+    %t: tensor<42x10xf32, #map>)
+  -> tensor<32x10xf32, #map>
+{
+  %slice = tensor.extract_slice %t[0, 0][32, 10][1, 1] : tensor<42x10xf32, #map> to tensor<32x10xf32, #map>
+  // CHECK: %[[subview:.*]] = memref.subview %[[t]]
+
+  return %slice : tensor<32x10xf32, #map>
 }

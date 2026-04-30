@@ -27,6 +27,9 @@ getMemRefLayoutForTensorEncoding(RankedTensorType tensorType) {
     return cast<MemRefLayoutAttrInterface>(test::TestMemRefLayoutAttr::get(
         tensorType.getContext(), encoding.getDummy()));
   }
+  if (auto encoding = dyn_cast_if_present<mlir::AffineMapAttr>(tensorType.getEncoding())) {
+    return cast<MemRefLayoutAttrInterface>(encoding);
+  }
   return {};
 }
 
